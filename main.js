@@ -1,7 +1,8 @@
 /*! Seconvia site script (footer, after the CDN libraries)
  * 1. Button 046 (Osmo)       hover circle on [data-button-046]
  * 2. Page logic (svInit)     word swap, carousels, rules/certificate, statement fill,
- *                            loop diagram, counters, materials filter, facilities map pins
+ *                            loop diagram, counters, materials filter, facilities map pins,
+ *                            blog table of contents + read time
  * 3. Page transition (Osmo)  Barba + Lenis + DrawSVG; re-inits Webflow modules and fires the IX3
  *                            event "sv-page-in" (hero reveal + marquee are edited in the Interactions panel)
  */
@@ -160,6 +161,28 @@ if(sites.length){
   var first=sites.filter(function(b){return /planned|development/i.test(b.getAttribute('data-status')||'')})[0]||sites[0];
   pickSite(first.getAttribute('data-site'));
 }
+/* blog: table of contents (data-toc-* attributes, same setup as Bankoh) + read time */
+QA('[data-toc-wrap]').forEach(function(root){
+  if(root.getAttribute('data-toc-init'))return;
+  var content=Q('[data-toc-content]',root),list=Q('[data-toc-list]',root),tpl=list&&Q('[data-toc-link]',list),aside=Q('[data-toc-aside]',root);
+  if(!content||!list||!tpl)return;
+  var lv=root.getAttribute('data-toc-levels')||'h2,h3',off=parseInt(root.getAttribute('data-toc-offset'),10)||96;
+  var hs=QA(lv,content).filter(function(h){return !h.hasAttribute('data-toc-ignore')&&h.textContent.trim()});
+  tpl.parentNode.removeChild(tpl);
+  root.setAttribute('data-toc-init','1');
+  if(!hs.length){if(aside)aside.style.display='none';return}
+  var used={};
+  var links=hs.map(function(h){
+    if(!h.id){var s=h.textContent.trim().toLowerCase().replace(/[^a-z0-9\s-]/g,'').replace(/\s+/g,'-').replace(/-+/g,'-').replace(/^-|-$/g,'')||'section';used[s]=(used[s]||0)+1;h.id=used[s]>1?s+'-'+used[s]:s}
+    var a=tpl.cloneNode(true);a.removeAttribute('data-toc-link');a.setAttribute('data-toc-item','');a.setAttribute('data-toc-depth',h.tagName.charAt(1));a.setAttribute('href','#'+h.id);a.textContent=h.textContent.trim();
+    a.addEventListener('click',function(e){e.preventDefault();var L=window.__svLenis;if(L)L.scrollTo(h,{offset:-off});else window.scrollTo({top:h.getBoundingClientRect().top+window.scrollY-off,behavior:RM?'auto':'smooth'})});
+    list.appendChild(a);return a});
+  function setActive(i){links.forEach(function(a,j){a.setAttribute('data-toc-status',j===i?'active':'')})}
+  function onToc(){var act=0;hs.forEach(function(h,i){if(h.getBoundingClientRect().top-off-1<=0)act=i});setActive(act)}
+  addEventListener('scroll',onToc,{passive:true});onToc();
+});
+var rta=Q('[data-read-time-article]');
+if(rta){var wc=rta.textContent.trim().split(/\s+/).filter(Boolean).length,mins=Math.max(1,Math.ceil(wc/200));QA('[data-read-time]').forEach(function(e){e.textContent=mins+' min read'})}
 
 return function(){IV.forEach(function(t){clearInterval(t)});WL.forEach(function(w){window.removeEventListener(w[0],w[1],w[2])})};
 };
@@ -279,6 +302,7 @@ try{barba.init({
 function initLenis(){
   if(lenis||!hasLenis)return;
   lenis=new Lenis({lerp:.165,wheelMultiplier:1.25,anchors:{offset:-96}});
+  window.__svLenis=lenis;
   if(hasST)lenis.on("scroll",ScrollTrigger.update);
   gsap.ticker.add(function(t){lenis.raf(t*1000)});gsap.ticker.lagSmoothing(0);
 }
