@@ -174,10 +174,10 @@ QA('[data-toc-wrap]').forEach(function(root){
   var used={};
   var links=hs.map(function(h){
     if(!h.id){var s=h.textContent.trim().toLowerCase().replace(/[^a-z0-9\s-]/g,'').replace(/\s+/g,'-').replace(/-+/g,'-').replace(/^-|-$/g,'')||'section';used[s]=(used[s]||0)+1;h.id=used[s]>1?s+'-'+used[s]:s}
-    var a=tpl.cloneNode(true);a.removeAttribute('data-toc-link');a.setAttribute('data-toc-item','');a.setAttribute('data-toc-depth',h.tagName.charAt(1));a.setAttribute('href','#'+h.id);a.textContent=h.textContent.trim();
+    var a=tpl.cloneNode(true);a.removeAttribute('data-toc-link');a.setAttribute('data-toc-item','');a.setAttribute('data-toc-depth',h.tagName.charAt(1));if(h.tagName!=='H2')a.classList.add('is-depth-'+h.tagName.charAt(1));a.setAttribute('href','#'+h.id);a.textContent=h.textContent.trim();
     a.addEventListener('click',function(e){e.preventDefault();var L=window.__svLenis;if(L)L.scrollTo(h,{offset:-off});else window.scrollTo({top:h.getBoundingClientRect().top+window.scrollY-off,behavior:RM?'auto':'smooth'})});
     list.appendChild(a);return a});
-  function setActive(i){links.forEach(function(a,j){a.setAttribute('data-toc-status',j===i?'active':'')})}
+  function setActive(i){links.forEach(function(a,j){a.setAttribute('data-toc-status',j===i?'active':'');a.classList.toggle('is-active',j===i)})} /* styling: combo class .article_toc-link.is-active in the Designer */
   function onToc(){var act=0;hs.forEach(function(h,i){if(h.getBoundingClientRect().top-off-1<=0)act=i});setActive(act)}
   addEventListener('scroll',onToc,{passive:true});onToc();
 });
