@@ -163,7 +163,7 @@ if(sites.length){
 }
 /* blog: table of contents (data-toc-* attributes, same setup as Bankoh) + read time */
 QA('[data-toc-wrap]').forEach(function(root){
-  if(root.getAttribute('data-toc-init'))return;
+  if(root.__svToc){addEventListener('scroll',root.__svToc,{passive:true});root.__svToc();return} /* svInit can run twice on one page: re-attach the listener the cleanup removed */
   var content=Q('[data-toc-content]',root),list=Q('[data-toc-list]',root),tpl=list&&Q('[data-toc-link]',list),aside=Q('[data-toc-aside]',root);
   if(!content||!list||!tpl)return;
   var lv=root.getAttribute('data-toc-levels')||'h2,h3',off=parseInt(root.getAttribute('data-toc-offset'),10)||96;
@@ -179,7 +179,7 @@ QA('[data-toc-wrap]').forEach(function(root){
     list.appendChild(a);return a});
   function setActive(i){links.forEach(function(a,j){a.setAttribute('data-toc-status',j===i?'active':'');a.classList.toggle('is-active',j===i)})} /* styling: combo class .article_toc-link.is-active in the Designer */
   function onToc(){var act=0;hs.forEach(function(h,i){if(h.getBoundingClientRect().top-off-1<=0)act=i});setActive(act)}
-  addEventListener('scroll',onToc,{passive:true});onToc();
+  root.__svToc=onToc;addEventListener('scroll',onToc,{passive:true});onToc();
 });
 var rta=Q('[data-read-time-article]');
 if(rta){var wc=rta.textContent.trim().split(/\s+/).filter(Boolean).length,mins=Math.max(1,Math.ceil(wc/200));QA('[data-read-time]').forEach(function(e){e.textContent=mins+' min read'})}
